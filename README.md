@@ -14,5 +14,8 @@ For this project I created a port scanner in Python from scratch using the socke
 ### Documentation
 This script contains several different parts that combine to create a working port scanner. At a high level, this script works the same as other port scanners, where a SYN packet is sent to the desired destination, and if a SYN ACK packet is recieved then that means the port is open. Despite the simple explaination of this script, there is a lot more going on then it seems. I will discuss the different parts of the script and how they function together below.
 
-#### IP Header
-The first part of this script is creating the IP header. To do this I decided to set all of the IP header values from scratch.
+#### TCP Header
+The first part of this script is creating the TCP header. To create the TCP header, I decided to set every value for the header field then convert all of the data into byte objects. A TCP header has around 9 fields which determine the type and function of the packet.
+![TCP_Header](https://github.com/user-attachments/assets/ef7a3bc2-10d5-46c5-94c0-f2df6e06ea46)
+Ref 1. Diagram of TCP header, from: https://www.geeksforgeeks.org/computer-networks/tcp-ip-packet-format/
+
