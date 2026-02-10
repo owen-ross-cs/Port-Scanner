@@ -1,4 +1,4 @@
-# Port-Scanner
+# Port Scanner
 
 ## Objective
 For this project I created a port scanner in Python from scratch using the socket library. This project is not meant to create a better port scanner than the ones that are widely used in the industry like Nmap, instead it was meant to showcase my knowledge of the port scanning process, that is a vital task of the reconisance phase of pen testing. 
@@ -45,3 +45,5 @@ tcp_checksum_placeholder = 0
 tcp_urg_pointer = 0
 ```
 
+#### IP Header
+The next part of the script is creating the IP header. This is simliar to creating the TCP header, with some differences. Since IP is a lower laayer than TCP, we need to set some data that wasn't present in the TCP header. The main difference is setting the IP version, the protocol, IP source address, and IP destination address. The TCP header will be combined with the IP header to create a complete IP packet.
