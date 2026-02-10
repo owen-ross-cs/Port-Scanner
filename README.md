@@ -19,3 +19,29 @@ The first part of this script is creating the TCP header. To create the TCP head
 ![TCP_Header](https://github.com/user-attachments/assets/ef7a3bc2-10d5-46c5-94c0-f2df6e06ea46)
 Ref 1. Diagram of TCP header, from: https://www.geeksforgeeks.org/computer-networks/tcp-ip-packet-format/
 
+Since I am creating a port scanner, I needed to create a SYN TCP header. To do this I set the SYN flag bit to 1, while not setting any other flag. If the port is open it will recieve the SYN packet and send a SYN ACK.
+```python
+''' Setting all of the values for the TCP header '''
+# Setting the TCP source port by generating a random number between 49152 and 65535, which are used for temporary connections
+tcp_src_port = random.randint(49152, 65535)
+# Setting the sequence number by generating a random number between 100 and 10000
+tcp_seq_num = random.randint(100, 10000)
+tcp_ack_num = 0
+tcp_off = 5 << 4 # 5 * 4 = 20 bytes, shifting the 5 bits to the left 4 times to get 20
+'''Setting all of the TCP flags'''
+tcp_fin = 0
+tcp_syn = 1 # Only setting the SYN flag because this is a SYN packet
+tcp_rst = 0
+tcp_psh = 0
+tcp_ack = 0
+tcp_urg = 0
+tcp_ece = 0
+tcp_cwr = 0
+# Combining all of the TCP flags together
+tcp_flags = tcp_fin + (tcp_syn << 1) + (tcp_rst << 2) + (tcp_psh << 3) + (tcp_ack << 4) + (tcp_urg << 5) + (tcp_ece << 6) + (tcp_cwr << 7)
+
+tcp_window = socket.htons(5840) # Maximum window size
+tcp_checksum_placeholder = 0
+tcp_urg_pointer = 0
+```
+
