@@ -65,5 +65,5 @@ ip_dst_addr = socket.inet_aton(dst_address)
 ```
 
 #### Checksum
-
+Since I am am using a TCP connection, I need to include the checksum into the TCP header. The checksum is an important part of network communication as this is used to verify data is being sent from a verfied source. To calculate the checksum, we need to create a pseudo header and combine it with the TCP header. 
 
