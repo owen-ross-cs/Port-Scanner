@@ -65,5 +65,57 @@ ip_dst_addr = socket.inet_aton(dst_address)
 ```
 
 #### Checksum
-Since I am am using a TCP connection, I need to include the checksum into the TCP header. The checksum is an important part of network communication as this is used to verify data is being sent from a verfied source. To calculate the checksum, we need to create a pseudo header and combine it with the TCP header. 
+Since I am am using a TCP connection, I need to include the checksum into the TCP header. The checksum is an important part of network communication as this is used to verify data is being sent from a verfied source. To calculate the checksum, we need to create a pseudo header and combine it with the TCP header. The pseduo header is a header that is created for the sole purpose of calculating the checksum, it is not sent to the destination. The pseduo header includes the source IP address, destination IP address, the protocol, the TCP header length, and reserve bits. This is combined with the TCP header to calculate the checksum. Here is the code for creating and combining the headers for the checksum:
+```python
+# Converting all of the TCP header values into byte objects, in order to be sent to the destination
+	tcp_header = pack('!HHLLBBHHH', tcp_src_port, tcp_dst_port, tcp_seq_num, tcp_ack_num, tcp_off, tcp_flags, tcp_window, tcp_checksum_placeholder, tcp_urg_pointer)
+	# The total byte length of the IP header (20 bytes) + the total length of the TCP header
+	ip_length = 20 + len(tcp_header)
+	# Converting all of the IP header values into byte objects, in order to be sent to the destination
+	ip_header = pack('!BBHHHBBH4s4s', ip_ver, ip_tos, ip_length, ip_id, ip_flags_fo, ip_ttl, ip_pro, ip_checksum, ip_src_addr, ip_dst_addr)
 
+	tcp_len = len(tcp_header)
+
+	# Combining the pseudo header and TCP header, then converting it all to byte objects in order to calculate the TCP checksum
+	pseudo_packet = pack('!4s4sBBH', pseudo_src_addr, pseudo_dst_addr, pseduo_placeholder, pseudo_proto, tcp_len)
+	pseudo_packet = pseudo_packet + tcp_header
+
+	# Calculating the TCP checksum before sending the packet
+	tcp_checksum = checksum(pseudo_packet)
+	tcp_header = pack('!HHLLBBHHH', tcp_src_port, tcp_dst_port, tcp_seq_num, tcp_ack_num, tcp_off, tcp_flags, tcp_window, tcp_checksum, tcp_urg_pointer)
+```
+
+The next part of this process is to actually calculate the checksum. For the sake of length I will only give a high overview of the process. The first step is to split the combined TCP and pseudo header into 16 bit words. A extra bit is added if there is an odd number of bytes to ensure all of the bytes are in 16 bit words. The next part is to combine all of the 16 bit words together. If there is an overflow of bytes, then wrap the overflow back to the lower 16 bits. Finally, all the bits in the combined words are inverted to get the final checksum. For more information you can <a href="https://www.geeksforgeeks.org/computer-networks/calculation-of-tcp-checksum/">click here</a>. Here is the function that is used to calculate the checksum:
+``` python
+def checksum(data):
+	"""
+	Calculate the TCP checksum
+	
+	Args:
+		data (byte object): Combined pseudo and TCP header as a byte object
+	
+	Return:
+		byte object: The calculated checksum for the TCP header
+
+	"""
+	# Checking if the last pair of bytes is incomplete, if it is then pad the data with an extra byte
+	if len(data) % 2 != 0:
+		data += b'\x00'
+
+	s = 0
+	# loop reading the puesudo header data 2 bytes at a time
+	for i in range(0, len(data), 2):
+		# Combining 2 bytes into a 16 bit word, then changing the 16 bit word into big endian format
+		w = data[i] << 8 | data[i+1]
+		s += w
+	
+	# Combine all of the bytes together, if there is an overflow then wrap the overflow to the lower 16 bits
+	s = (s >> 16) + (s & 0xffff)
+
+	# Ensuring the final result fits into a 16 bit format, since the previous line can still produce an overflow
+	s += s >> 16
+    
+	# Inverting all of the bits and return the checksum
+	return ~s & 0xffff
+```
+#### Sending and Recieving packets
