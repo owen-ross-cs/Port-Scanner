@@ -119,3 +119,14 @@ def checksum(data):
 	return ~s & 0xffff
 ```
 #### Sending and Recieving packets
+This is the porton of the script where most of the action actually happens. In order to send and recieve packets, there needs to be two scokets created, one for sending packets, the other for recieving. The reason why I csn't use the same socket for sending and recieving is because, by default the OS will handle the SYN ACK response which means the socket that sends the packet cannot access the reponse. By having a socket that listens to reponses I am able to specifically listen and analyze all of the packets being received by the system. Here is the code for initilizing the sockets:
+``` python
+# Creating the socket that will send the IP packet
+send_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
+
+# Creating the socket that will recieve the response to the SYN packet that was sent
+recv_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+recv_sock.settimeout(5)
+```
+
+To send the packet, the function sendto() from the socket library is used. This function will send the packet to the desired destination IP address and port. Since this is a port scanner, multiple packets with different destination ports will be sent.  
