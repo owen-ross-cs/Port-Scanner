@@ -131,7 +131,69 @@ recv_sock.settimeout(5)
 
 To send the packet, the function sendto() from the socket library is used. This function will send the packet to the desired destination IP address and port. Since this is a port scanner, multiple packets with different destination ports will be sent. The recieve socket then waits for a response from the destination. When a reponse is recieved the IP header is extracted to get the IP header length. This is important because it will be used to find the start of the TCP header. The TCP header is then extracted which will allow us to get the source port, destination port, and flags of the response. Then the source IP address, destination IP address, source port, and destintion port are compared to the ones in the sent packet to ensure this is a response to the same packet that was sent. Then I check if the SYN and ACK flags are set on response packet. If they are then that means the port is open. If the RST flag is set than that merans it is closed. If a response is not recieved in 5 seconds, then that means the reciever did not respond because it is down or has some filtering in place to not respond to SYN packets. After all of the ports have been scanned, a list of all the open ports found will be displayed for the user. The below is the code for this porton of the script:
 ``` python
+logger.info(f"Sending packet to: {dst_address}:{tcp_dst_port}")
+# Sending the packet to the destination IP address and port
+send_sock.sendto(packet, (dst_address, tcp_dst_port))
+logger.info(f"Packet sent to: {dst_address}:{tcp_dst_port}")
 
+	try:
+		# Execute the loop until the response is recieved, or the recieving socket times out
+		while True:
+			# Getting the response to the SYN packet from the response socket
+			response = recv_sock.recv(65535)
+				
+			logger.info(f"Response recieved: {response}")
+
+			# Getting the IP header by splitting the first 20 bytes from the response, and converting the byte value back into numeric and string values
+			res_ip_header = response[0:20]
+			iph = unpack('!BBHHHBBH4s4s', res_ip_header)
+
+			# Getting the first byte of the response IP header, then getting the length of the IP header to determine where the TCP header starts
+			ihl = iph[0] & 0xF
+			ip_header_len = ihl * 4
+
+			# Getting the source and destination IP addresses from the response, and converting them into string objects
+			res_src_ip = socket.inet_ntoa(iph[8])
+			res_dst_ip = socket.inet_ntoa(iph[9])
+
+			logger.info(f"Reponse packet source IP: {res_src_ip}")
+			logger.info(f"Reponse packet destination IP: {res_dst_ip}")
+
+			# Getting the TCP header by splitting the 20 bytes after the IP header
+			tcp_header_start = ip_header_len
+			tcp_header = response[tcp_header_start:tcp_header_start+20]
+
+			# Converting the response TCP header into numeric and string values
+			tcph = unpack('!HHLLBBHHH', tcp_header)
+			logger.info(f"TCP response header extracted: {tcph}")
+
+			# Getting the source port, destination port, and TCP flags from the TCP header
+			res_src_port = tcph[0]
+			res_dst_port = tcph[1]
+			res_flags = tcph[5]
+
+			logger.info(f"Source port {res_src_port}, Destination port {res_dst_port}, and flags {res_flags} from response TCP header.")
+
+			# Checking if the response has the same source IP address and source port of the sent packet
+			if src_address == res_dst_ip and dst_address == res_src_ip and tcp_src_port == res_dst_port and tcp_dst_port == res_src_port:
+				# Checking if the SYN and ACK flags in the TCP header are set, if they are it confirms the port is open
+				if res_flags & 0x12 == 0x12:
+					print(f"Port {tcp_dst_port} - OPEN")
+					open_ports.append(tcp_dst_port)
+					logger.info(f"Port {dst_address}:{tcp_dst_port} is open")
+				# Checking if the RST flag is set, if it is then it confirms the port is closed
+				elif res_flags & 0x04:
+					print(f"Port {tcp_dst_port} - CLOSED")
+					logger.info(f"Port {dst_address}:{tcp_dst_port} is closed")
+			break
+	# If there is no reponse, then it means the host is not online or it is filtered and did not send a response
+	except socket.timeout:
+		print(f"Port {tcp_dst_port} - FILTERED or HOST DOWN")
+		logger.info(f"Connection to port {dst_address}:{tcp_dst_port} timed out, host is either filtered or down")
+# Display all of the open ports from the scan
+print("----------Scan completed----------")
+print(f"Open ports for {dst_address}: {open_ports}")
+logger.info(f"Scan completed, the following ports are open for {dst_address}: {open_ports}")
 ```
 
 Here is how a connection to an open port would look like through Wireshark:
