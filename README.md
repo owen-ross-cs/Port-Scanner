@@ -133,3 +133,7 @@ To send the packet, the function sendto() from the socket library is used. This 
 ``` python
 
 ```
+
+Here is how a connection to an open port would look like through Wireshark:
+<img width="1254" height="200" alt="image" src="https://github.com/user-attachments/assets/9a89dee0-f35e-44be-a16b-8e5a84d84be9" />
+Ref 3. A successful SYN and SYN ACK response from an open port using wireshark
