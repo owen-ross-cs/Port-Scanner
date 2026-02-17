@@ -199,3 +199,8 @@ logger.info(f"Scan completed, the following ports are open for {dst_address}: {o
 Here is how a connection to an open port would look like through Wireshark:
 <img width="1254" height="200" alt="image" src="https://github.com/user-attachments/assets/9a89dee0-f35e-44be-a16b-8e5a84d84be9" />
 Ref 3. A successful SYN and SYN ACK response from an open port using wireshark
+
+### How to Use
+In order to use thid script you must have admin priviledges, and you need to execute it in Linux. This script sends numerous packets to a destination, which can cause overload on the destination machine, so it is important to use a destination that is designed to be scanned, like scanme.nmap.org which I use as an example.
+
+#### Step 1
