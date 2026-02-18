@@ -204,3 +204,10 @@ Ref 3. A successful SYN and SYN ACK response from an open port using wireshark
 In order to use thid script you must have admin priviledges, and you need to execute it in Linux. This script sends numerous packets to a destination, which can cause overload on the destination machine, so it is important to use a destination that is designed to be scanned, like scanme.nmap.org which I use as an example.
 
 #### Step 1
+First, since this script manipulates network packets, you will need to have admin/root permissions to execute this script. The most common way to do this is typing the command su root.
+
+#### Step 2
+Now that you have the proper permissions, you need to go to the directory where the scanner.py script is located. To do this use the cd command with the directory path.
+
+#### Step 3
+Finally, you can execute the code using the command python scanner.py <destination IP address>. The IP address you provide must be in IPv4 format, i.e. 1.2.3.4. The script will start and scan all of the high priority ports (ports 1 to 1024) on the destination. The script will display the result after each port is scanned, and create a log file with all of the information gathered during the scan.
