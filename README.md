@@ -1,18 +1,23 @@
 # Port Scanner
 
 ## Objective
-For this project I created a port scanner in Python from scratch using the socket library. This project is not meant to create a better port scanner than the ones that are widely used in the industry like Nmap, instead it was meant to showcase my knowledge of the port scanning process, that is a vital task of the reconisance phase of pen testing. 
+This project uses the socket library in python to create a TCP port scanner from scratch. The goal of this project is not to outpreform industry tools like Nmap, but to demonstrate a deep understanding of trhe port scanning process used during the reconnaissance phase of penetration testing.
 
 ### Skills Learned
-- Socket programming in Python
+- Low-level socket programming in Python
 - IP and TCP packet analysis
+- TCP checksum calculation
 
 ### Tools Used
 - Pyhton
 - Wireshark
 
-### Breakdown
-This script contains several different parts that combine to create a working port scanner. At a high level, this script works the same as other port scanners, where a SYN packet is sent to the desired destination, and if a SYN ACK packet is recieved then that means the port is open. Despite the simple explaination of this script, there is a lot more going on then it seems. I will discuss the different parts of the script and how they function together below.
+### Project Overview
+This script performs a SYN scan by manually crafting TCP/IP packets and analyzing the response from the target host. 
+At a high level, the scanner sends a TCP SYN packet to each target port:
+- If the target responds with SYN ACK, the port is open.
+- If the target responds with RST, the port is closed.
+- If there is no response then the port is either down or filtered.
 
 #### TCP Header
 The first part of this script is creating the TCP header. To create the TCP header, I decided to set every value for the header field then convert all of the data into byte objects. A TCP header has around 9 fields which determine the type and function of the packet. Below is a diagram of a TCP header:
