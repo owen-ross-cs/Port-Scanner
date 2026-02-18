@@ -210,4 +210,4 @@ First, since this script manipulates network packets, you will need to have admi
 Now that you have the proper permissions, you need to go to the directory where the scanner.py script is located. To do this use the cd command with the directory path.
 
 #### Step 3
-Finally, you can execute the code using the command python scanner.py <destination IP address>. The IP address you provide must be in IPv4 format, i.e. 1.2.3.4. The script will start and scan all of the high priority ports (ports 1 to 1024) on the destination. The script will display the result after each port is scanned, and create a log file with all of the information gathered during the scan.
+Finally, you can execute the code using the command python scanner.py \<destination IP address\>. The IP address you provide must be in IPv4 format, i.e. 1.2.3.4. The script will start and scan all of the high priority ports (ports 1 to 1024) on the destination. The script will display the result after each port is scanned, and create a log file with all of the information gathered during the scan.
