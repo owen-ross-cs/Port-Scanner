@@ -17,9 +17,11 @@ This script performs a SYN scan by manually crafting TCP/IP packets and analyzin
 At a high level, the scanner sends a TCP SYN packet to each target port:
 - If the target responds with SYN ACK, the port is open.
 - If the target responds with RST, the port is closed.
-- If there is no response then the port is either down or filtered.
+- If there is no response then the port is filtered or the host is unreachable.
+This process appears simple, but in reality it involves manually building packet headers, calculating checksums, and parsing raw packet responses. 
 
-#### TCP Header
+### Implementation Breakdown
+#### TCP Header Construction
 The first part of this script is creating the TCP header. To create the TCP header, I decided to set every value for the header field then convert all of the data into byte objects. A TCP header has around 9 fields which determine the type and function of the packet. Below is a diagram of a TCP header:
 ![TCP_Header](https://github.com/user-attachments/assets/ef7a3bc2-10d5-46c5-94c0-f2df6e06ea46)
 Ref 1. Diagram of TCP header, from: https://www.geeksforgeeks.org/computer-networks/tcp-ip-packet-format/
