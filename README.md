@@ -11,7 +11,7 @@ For this project I created a port scanner in Python from scratch using the socke
 - Pyhton
 - Wireshark
 
-### Documentation
+### Breakdown
 This script contains several different parts that combine to create a working port scanner. At a high level, this script works the same as other port scanners, where a SYN packet is sent to the desired destination, and if a SYN ACK packet is recieved then that means the port is open. Despite the simple explaination of this script, there is a lot more going on then it seems. I will discuss the different parts of the script and how they function together below.
 
 #### TCP Header
