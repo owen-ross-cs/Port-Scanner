@@ -22,11 +22,13 @@ This process appears simple, but in reality it involves manually building packet
 
 ### Implementation Breakdown
 #### TCP Header Construction
-The first part of this script is creating the TCP header. To create the TCP header, I decided to set every value for the header field then convert all of the data into byte objects. A TCP header has around 9 fields which determine the type and function of the packet. Below is a diagram of a TCP header:
+The first part of this script constructs the TCP header by manually defining each field before the data is converted into byte objects. 
+
+A TCP header has multiple fields which determine how a packet should be processed. Below is a diagram of a TCP header:
 ![TCP_Header](https://github.com/user-attachments/assets/ef7a3bc2-10d5-46c5-94c0-f2df6e06ea46)
 Ref 1. Diagram of TCP header, from: https://www.geeksforgeeks.org/computer-networks/tcp-ip-packet-format/
 
-Since I am creating a port scanner, I needed to create a SYN TCP header. To do this I set the SYN flag bit to 1, while not setting any other flag. If the port is open it will recieve the SYN packet and send a SYN ACK. Below is the code for creating the TCP header:
+Since this scanner performs a SYN scan, only the SYN flag is set while all the other flags are not set. The source port and sequence number are randomized to simulate legitimate connection attempts and avoid reuse patterns. The TCP flags are combined using bit shifting to produce a single flag byte. Below is the code for creating the TCP header:
 ```python
 ''' Setting all of the values for the TCP header '''
 # Setting the TCP source port by generating a random number between 49152 and 65535, which are used for temporary connections
@@ -52,12 +54,19 @@ tcp_checksum_placeholder = 0
 tcp_urg_pointer = 0
 ```
 
-#### IP Header
-The next part of the script is creating the IP header. This is simliar to creating the TCP header, with some differences. Since IP is a lower laayer than TCP, we need to set some data that wasn't present in the TCP header. The main difference is setting the IP version, the protocol, IP source address, and IP destination address. The TCP header will be combined with the IP header to create a complete IP packet. Below is a diagram of an IP header:
+#### IP Header Construction
+The IP header is constructed after the TCP header. Unlike the TCP header, the IP header includes routing informaton required to deliver the packet to the target.
+Key fields in the IP header include:
+- IP version
+- Protocol type
+- Source IP address
+- Destination IP address
+
+Below is a diagram of an IP header:
 <img width="936" height="427" alt="image" src="https://github.com/user-attachments/assets/1b8e460c-4c04-4674-87c0-753d3d899f53" />
 Ref 2. Diagram of IP header, from: https://en.wikipedia.org/wiki/IPv4#/media/File:IPv4_Packet-en.svg
 
-Since it is a SYN packet, the IP header needs to be set with the TCP protocol and have a version of IPv4. Other than this, setting the IP heade is pretty much the same as creating the TCP header. Below is the code to create the IP header:
+The IP header is eventually combined with the TCP header to form the complete packet that is sent to the target. Below is the code to create the IP header:
 ```python
 ''' Setting all of the values for the IP header '''
 ip_ver = (4 << 4) + 5 # Setting the version for IPv4
@@ -71,8 +80,10 @@ ip_src_addr = socket.inet_aton(src_address)
 ip_dst_addr = socket.inet_aton(dst_address)
 ```
 
-#### Checksum
-Since I am am using a TCP connection, I need to include the checksum into the TCP header. The checksum is an important part of network communication as this is used to verify data is being sent from a verfied source. To calculate the checksum, we need to create a pseudo header and combine it with the TCP header. The pseduo header is a header that is created for the sole purpose of calculating the checksum, it is not sent to the destination. The pseduo header includes the source IP address, destination IP address, the protocol, the TCP header length, and reserve bits. This is combined with the TCP header to calculate the checksum. Here is the code for creating and combining the headers for the checksum:
+#### Checksum Calculation
+TCP uses a checksum to ensure packet integrrity during transmission. To checksum is caslculated using both the TCP header and a pseudo header.
+
+
 ```python
 # Converting all of the TCP header values into byte objects, in order to be sent to the destination
 	tcp_header = pack('!HHLLBBHHH', tcp_src_port, tcp_dst_port, tcp_seq_num, tcp_ack_num, tcp_off, tcp_flags, tcp_window, tcp_checksum_placeholder, tcp_urg_pointer)
