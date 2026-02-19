@@ -62,7 +62,7 @@ Key fields in the IP header include:
 - Source IP address
 - Destination IP address
 
-Below is a diagram of an IP header:
+Below is a diagram of the IP header:
 <img width="936" height="427" alt="image" src="https://github.com/user-attachments/assets/1b8e460c-4c04-4674-87c0-753d3d899f53" />
 Ref 2. Diagram of IP header, from: https://en.wikipedia.org/wiki/IPv4#/media/File:IPv4_Packet-en.svg
 
@@ -81,8 +81,14 @@ ip_dst_addr = socket.inet_aton(dst_address)
 ```
 
 #### Checksum Calculation
-TCP uses a checksum to ensure packet integrrity during transmission. To checksum is caslculated using both the TCP header and a pseudo header.
+TCP uses a checksum to ensure packet integrrity during transmission. To checksum is calculated using both the TCP header and a pseudo header. The pseudo header is only used for checksum calculation and it contains the fields:
+- Source IP address
+- Destination IP address
+- Protocol (TCP)
+- TCP length
+- Reserved bits
 
+The pseduo header and TCP header are combined to calculate the checksum.
 
 ```python
 # Converting all of the TCP header values into byte objects, in order to be sent to the destination
@@ -102,8 +108,15 @@ TCP uses a checksum to ensure packet integrrity during transmission. To checksum
 	tcp_checksum = checksum(pseudo_packet)
 	tcp_header = pack('!HHLLBBHHH', tcp_src_port, tcp_dst_port, tcp_seq_num, tcp_ack_num, tcp_off, tcp_flags, tcp_window, tcp_checksum, tcp_urg_pointer)
 ```
-
-The next part of this process is to actually calculate the checksum. For the sake of length I will only give a high overview of the process. The first step is to split the combined TCP and pseudo header into 16 bit words. A extra bit is added if there is an odd number of bytes to ensure all of the bytes are in 16 bit words. The next part is to combine all of the 16 bit words together. If there is an overflow of bytes, then wrap the overflow back to the lower 16 bits. Finally, all the bits in the combined words are inverted to get the final checksum. For more information you can <a href="https://www.geeksforgeeks.org/computer-networks/calculation-of-tcp-checksum/">click here</a>. Here is the function that is used to calculate the checksum:
+##### Checksum Algorithm
+The algorithm for calculating the checksum is as follows:
+1. If the data does not have an even length, then it will pad the data with an extra byte 
+2. The data is split into 16 bit words
+3. All the 16 bit words are combined together
+4. If there are any overflow bits, they are wraped back into the lower 16 bits
+5. Invert the final result to get the checksum
+The checksum ensures the receving host can verify the integrity of the packet.
+For more information you can <a href="https://www.geeksforgeeks.org/computer-networks/calculation-of-tcp-checksum/">click here</a>. Here is the function that is used to calculate the checksum:
 ``` python
 def checksum(data):
 	"""
@@ -137,7 +150,7 @@ def checksum(data):
 	return ~s & 0xffff
 ```
 #### Sending and Recieving packets
-This is the porton of the script where most of the action actually happens. In order to send and recieve packets, there needs to be two scokets created, one for sending packets, the other for recieving. The reason why I csn't use the same socket for sending and recieving is because, by default the OS will handle the SYN ACK response which means the socket that sends the packet cannot access the reponse. By having a socket that listens to reponses I am able to specifically listen and analyze all of the packets being received by the system. Here is the code for initilizing the sockets:
+In order to send and recieve packets, there needs to be two scokets created, one for sending packets, the other for recieving. The reason why I csn't use the same socket for sending and recieving is because, by default the OS will handle the SYN ACK response which means the socket that sends the packet cannot access the reponse. By having a socket that listens to reponses I am able to specifically listen and analyze all of the packets being received by the system. Here is the code for initilizing the sockets:
 ``` python
 # Creating the socket that will send the IP packet
 send_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
