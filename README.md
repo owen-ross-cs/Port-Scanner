@@ -149,18 +149,32 @@ def checksum(data):
 	# Inverting all of the bits and return the checksum
 	return ~s & 0xffff
 ```
-#### Sending and Recieving packets
-In order to send and recieve packets, there needs to be two scokets created, one for sending packets, the other for recieving. The reason why I csn't use the same socket for sending and recieving is because, by default the OS will handle the SYN ACK response which means the socket that sends the packet cannot access the reponse. By having a socket that listens to reponses I am able to specifically listen and analyze all of the packets being received by the system. Here is the code for initilizing the sockets:
+#### Packet Teansmission and Response Handling
+Two raw sockets are used for transmission and response. One socket sends crafted packets, and the other socket listens for incoming TCP responses. Seperate sockets are required because the operating system may handle the TCP responses automatically, preventing manual packet analysis.
 ``` python
 # Creating the socket that will send the IP packet
 send_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_RAW)
 
 # Creating the socket that will recieve the response to the SYN packet that was sent
 recv_sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-recv_sock.settimeout(5)
 ```
 
-To send the packet, the function sendto() from the socket library is used. This function will send the packet to the desired destination IP address and port. Since this is a port scanner, multiple packets with different destination ports will be sent. The recieve socket then waits for a response from the destination. When a reponse is recieved the IP header is extracted to get the IP header length. This is important because it will be used to find the start of the TCP header. The TCP header is then extracted which will allow us to get the source port, destination port, and flags of the response. Then the source IP address, destination IP address, source port, and destintion port are compared to the ones in the sent packet to ensure this is a response to the same packet that was sent. Then I check if the SYN and ACK flags are set on response packet. If they are then that means the port is open. If the RST flag is set than that merans it is closed. If a response is not recieved in 5 seconds, then that means the reciever did not respond because it is down or has some filtering in place to not respond to SYN packets. After all of the ports have been scanned, a list of all the open ports found will be displayed for the user. The below is the code for this porton of the script:
+##### Response Analysis
+After the packet is sent to the target, the scanner listens for a response and preforms the following steps:
+1. Extracts the IP header'
+2. Determines the IP header length
+3. Locate and extract the TCP header
+4. Verify the response has the same routing information as the request
+5. Analyze the TCP flags to determine the status of the port
+``` python
+# Getting the first byte of the response IP header, then getting the length of the IP header to determine where the TCP header starts
+ihl = iph[0] & 0xF
+ip_header_len = ihl * 4
+```
+Finding the IP header length is required because optional IP fields may change the header size. 
+
+##### Port Response Analysis
+
 ``` python
 logger.info(f"Sending packet to: {dst_address}:{tcp_dst_port}")
 # Sending the packet to the destination IP address and port
