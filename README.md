@@ -174,85 +174,85 @@ ip_header_len = ihl * 4
 Finding the IP header length is required because optional IP fields may change the header size. 
 
 ##### Port Response Analysis
+The TCP flags of the response header are extracted and analyzed to determine the status of the port. 
+| Flags | Status |
+|--------------|---------------|
+| SYN + ACK | Port Open  |
+| RST | Port Closed  |
+| No Respoinse | Port Filtered or Host Down  |
+
+Results are displayed during the scan and logged to a file.
 
 ``` python
-logger.info(f"Sending packet to: {dst_address}:{tcp_dst_port}")
-# Sending the packet to the destination IP address and port
-send_sock.sendto(packet, (dst_address, tcp_dst_port))
-logger.info(f"Packet sent to: {dst_address}:{tcp_dst_port}")
-
-	try:
-		# Execute the loop until the response is recieved, or the recieving socket times out
-		while True:
-			# Getting the response to the SYN packet from the response socket
-			response = recv_sock.recv(65535)
-				
-			logger.info(f"Response recieved: {response}")
-
-			# Getting the IP header by splitting the first 20 bytes from the response, and converting the byte value back into numeric and string values
-			res_ip_header = response[0:20]
-			iph = unpack('!BBHHHBBH4s4s', res_ip_header)
-
-			# Getting the first byte of the response IP header, then getting the length of the IP header to determine where the TCP header starts
-			ihl = iph[0] & 0xF
-			ip_header_len = ihl * 4
-
-			# Getting the source and destination IP addresses from the response, and converting them into string objects
-			res_src_ip = socket.inet_ntoa(iph[8])
-			res_dst_ip = socket.inet_ntoa(iph[9])
-
-			logger.info(f"Reponse packet source IP: {res_src_ip}")
-			logger.info(f"Reponse packet destination IP: {res_dst_ip}")
-
-			# Getting the TCP header by splitting the 20 bytes after the IP header
-			tcp_header_start = ip_header_len
-			tcp_header = response[tcp_header_start:tcp_header_start+20]
-
-			# Converting the response TCP header into numeric and string values
-			tcph = unpack('!HHLLBBHHH', tcp_header)
-			logger.info(f"TCP response header extracted: {tcph}")
-
-			# Getting the source port, destination port, and TCP flags from the TCP header
-			res_src_port = tcph[0]
-			res_dst_port = tcph[1]
-			res_flags = tcph[5]
-
-			logger.info(f"Source port {res_src_port}, Destination port {res_dst_port}, and flags {res_flags} from response TCP header.")
-
-			# Checking if the response has the same source IP address and source port of the sent packet
-			if src_address == res_dst_ip and dst_address == res_src_ip and tcp_src_port == res_dst_port and tcp_dst_port == res_src_port:
-				# Checking if the SYN and ACK flags in the TCP header are set, if they are it confirms the port is open
-				if res_flags & 0x12 == 0x12:
-					print(f"Port {tcp_dst_port} - OPEN")
-					open_ports.append(tcp_dst_port)
-					logger.info(f"Port {dst_address}:{tcp_dst_port} is open")
-				# Checking if the RST flag is set, if it is then it confirms the port is closed
-				elif res_flags & 0x04:
-					print(f"Port {tcp_dst_port} - CLOSED")
-					logger.info(f"Port {dst_address}:{tcp_dst_port} is closed")
+	# Getting the TCP header by splitting the 20 bytes after the IP header
+	tcp_header_start = ip_header_len
+	tcp_header = response[tcp_header_start:tcp_header_start+20]
+	
+	# Converting the response TCP header into numeric and string values
+	tcph = unpack('!HHLLBBHHH', tcp_header)
+	
+	# Getting the source port, destination port, and TCP flags from the TCP header
+	res_src_port = tcph[0]
+	res_dst_port = tcph[1]
+	res_flags = tcph[5]
+	
+	# Checking if the response has the same source IP address and source port of the sent packet
+	if (src_address == res_dst_ip and dst_address == res_src_ip) and (tcp_src_port == res_dst_port and tcp_dst_port == res_src_port):
+		# Checking if the SYN and ACK flags in the TCP header are set, if they are it confirms the port is open
+		if res_flags & 0x12 == 0x12:
+			print(f"Port {tcp_dst_port} - OPEN")
+			pen_ports.append(tcp_dst_port)
+			logger.info(f"Port {dst_address}:{tcp_dst_port} is open")
+		# Checking if the RST flag is set, if it is then it confirms the port is closed
+		elif res_flags & 0x04:
+			print(f"Port {tcp_dst_port} - CLOSED")
+			logger.info(f"Port {dst_address}:{tcp_dst_port} is closed")
 			break
-	# If there is no reponse, then it means the host is not online or it is filtered and did not send a response
-	except socket.timeout:
-		print(f"Port {tcp_dst_port} - FILTERED or HOST DOWN")
-		logger.info(f"Connection to port {dst_address}:{tcp_dst_port} timed out, host is either filtered or down")
-# Display all of the open ports from the scan
-print("----------Scan completed----------")
-print(f"Open ports for {dst_address}: {open_ports}")
-logger.info(f"Scan completed, the following ports are open for {dst_address}: {open_ports}")
+# If there is no reponse, then it means the host is not online or it is filtered and did not send a response
+except socket.timeout:
+	print(f"Port {tcp_dst_port} - FILTERED or HOST DOWN")
+	logger.info(f"Connection to port {dst_address}:{tcp_dst_port} timed out, host is either filtered or down")
 ```
+
+#### Example Packet Flow
+A successful connection attempt produces the following packet exchange:
+1. SYN sent to target
+2. Target responds with SYN ACK
+3. RST sent to target (The handshake is not completed)
 
 Here is how a connection to an open port would look like through Wireshark:
 <img width="1254" height="200" alt="image" src="https://github.com/user-attachments/assets/9a89dee0-f35e-44be-a16b-8e5a84d84be9" />
 Ref 3. A successful SYN and SYN ACK response from an open port using wireshark
 
-### How to Use
-In order to use thid script you must have admin priviledges, and you need to execute it in Linux. This script sends numerous packets to a destination, which can cause overload on the destination machine, so it is important to use a destination that is designed to be scanned, like scanme.nmap.org which I use as an example.
+### Usage Instructions
+#### Requirements
+- Linux operating system
+- Root or administrator privleges
+Raw sockets require elevated privileges to manipulate network packets.
 
-#### Step 1
-First, since this script manipulates network packets, you will need to have admin/root permissions to execute this script. The most common way to do this is typing the command su root.
+#### Step 1 - Obtain Root Access
+Run:
+``` bash
+sudo su
+```
 
-#### Step 2
-Now that you have the proper permissions, you need to go to the directory where the scanner.py script is located. To do this use the cd command with the directory path.
+#### Step 2 - Navigate to Script Directory
+``` bash
+cd /path/to/script
+```
 
-#### Step 3
-Finally, you can execute the code using the command python scanner.py \<destination IP address\>. The IP address you provide must be in IPv4 format, i.e. 1.2.3.4. The script will start and scan all of the high priority ports (ports 1 to 1024) on the destination. The script will display the result after each port is scanned, and create a log file with all of the information gathered during the scan.
+#### Step 3 - Execute Scanner
+``` bash
+python scanner.py <target IP>
+```
+
+Example:
+``` bash
+python scanner.py 45.33.32.156
+```
+Note: 45.33.32.156 is the IP address of scanme.nmap.org, which is a website designed to be scanned.
+
+The scanner checks ports 1-1024 and displays the results in real time. A log file is also generated containing detailed scan information.
+
+### Ethical Use Notice
+This tool generates large volumes of network traffic and should only be used against systems you have permission to scan. Public test targets such as scaneme.nmap.org are recommended for safe testing.
