@@ -18,17 +18,22 @@ At a high level, the scanner sends a TCP SYN packet to each target port:
 - If the target responds with SYN ACK, the port is open.
 - If the target responds with RST, the port is closed.
 - If there is no response then the port is filtered or the host is unreachable.
+
+
 This process appears simple, but in reality it involves manually building packet headers, calculating checksums, and parsing raw packet responses. 
 
 ### Implementation Breakdown
 #### TCP Header Construction
 The first part of this script constructs the TCP header by manually defining each field before the data is converted into byte objects. 
 
+
 A TCP header has multiple fields which determine how a packet should be processed. Below is a diagram of a TCP header:
-![TCP_Header](https://github.com/user-attachments/assets/ef7a3bc2-10d5-46c5-94c0-f2df6e06ea46)
+<img width="500" height="254" alt="image" src="https://github.com/user-attachments/assets/02349c03-3e41-4d92-8f71-269634b0c6a8" />
+<br/>
 Ref 1. Diagram of TCP header, from: https://www.geeksforgeeks.org/computer-networks/tcp-ip-packet-format/
 
-Since this scanner performs a SYN scan, only the SYN flag is set while all the other flags are not set. The source port and sequence number are randomized to simulate legitimate connection attempts and avoid reuse patterns. The TCP flags are combined using bit shifting to produce a single flag byte. Below is the code for creating the TCP header:
+
+Since this scanner performs a SYN scan, only the SYN flag is set while all the other flags are not set. The source port and sequence number are randomized to simulate legitimate connection attempts and avoid reuse patterns. The TCP flags are combined using bit shifting to produce a single flag byte.
 ```python
 ''' Setting all of the values for the TCP header '''
 # Setting the TCP source port by generating a random number between 49152 and 65535, which are used for temporary connections
@@ -61,12 +66,12 @@ Key fields in the IP header include:
 - Protocol type
 - Source IP address
 - Destination IP address
-
-Below is a diagram of the IP header:
-<img width="936" height="427" alt="image" src="https://github.com/user-attachments/assets/1b8e460c-4c04-4674-87c0-753d3d899f53" />
+<img width="536" height="227" alt="image" src="https://github.com/user-attachments/assets/1b8e460c-4c04-4674-87c0-753d3d899f53" />
+<br/>
 Ref 2. Diagram of IP header, from: https://en.wikipedia.org/wiki/IPv4#/media/File:IPv4_Packet-en.svg
 
-The IP header is eventually combined with the TCP header to form the complete packet that is sent to the target. Below is the code to create the IP header:
+
+The IP header is eventually combined with the TCP header to form the complete packet that is sent to the target.
 ```python
 ''' Setting all of the values for the IP header '''
 ip_ver = (4 << 4) + 5 # Setting the version for IPv4
@@ -87,6 +92,7 @@ TCP uses a checksum to ensure packet integrrity during transmission. To checksum
 - Protocol (TCP)
 - TCP length
 - Reserved bits
+
 
 The pseduo header and TCP header are combined to calculate the checksum.
 
@@ -115,8 +121,10 @@ The algorithm for calculating the checksum is as follows:
 3. All the 16 bit words are combined together
 4. If there are any overflow bits, they are wraped back into the lower 16 bits
 5. Invert the final result to get the checksum
+
+
 The checksum ensures the receving host can verify the integrity of the packet.
-For more information you can <a href="https://www.geeksforgeeks.org/computer-networks/calculation-of-tcp-checksum/">click here</a>. Here is the function that is used to calculate the checksum:
+For more information you can <a href="https://www.geeksforgeeks.org/computer-networks/calculation-of-tcp-checksum/">click here</a>.
 ``` python
 def checksum(data):
 	"""
@@ -221,7 +229,8 @@ A successful connection attempt produces the following packet exchange:
 3. RST sent to target (The handshake is not completed)
 
 Here is how a connection to an open port would look like through Wireshark:
-<img width="1254" height="200" alt="image" src="https://github.com/user-attachments/assets/9a89dee0-f35e-44be-a16b-8e5a84d84be9" />
+<img width="754" height="150" alt="image" src="https://github.com/user-attachments/assets/9a89dee0-f35e-44be-a16b-8e5a84d84be9" />
+<br/>
 Ref 3. A successful SYN and SYN ACK response from an open port using wireshark
 
 ### Usage Instructions
